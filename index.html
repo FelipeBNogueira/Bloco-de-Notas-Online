@@ -3,17 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bloco de Notas</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Bloco de Notas com Abas</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
     <h1>📝 Bloco de Notas</h1>
+
+    <div id="tabs">
+      <button onclick="novaNota()">+ Nova Nota</button>
+      <div id="listaAbas"></div>
+    </div>
+
     <textarea id="note" placeholder="Escreva suas anotações aqui..."></textarea>
+
     <div class="buttons">
+      <button onclick="salvarNota()">Salvar</button>
       <button onclick="downloadTxt()">Salvar como .TXT</button>
       <button onclick="downloadPdf()">Salvar como .PDF</button>
-      <button onclick="clearNote()">Limpar Anotações</button>
+      <button onclick="excluirNota()">Excluir Nota</button>
     </div>
   </div>
 
