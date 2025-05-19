@@ -1,75 +1,92 @@
 const textarea = document.getElementById('note');
-const listaAbas = document.getElementById('listaAbas');
+const tabsContainer = document.getElementById('tabs');
+const newTabBtn = document.getElementById('newTabBtn');
 
-let notas = JSON.parse(localStorage.getItem('notas')) || {};
-let notaAtual = localStorage.getItem('notaAtual') || null;
+let currentTabId = null;
 
-function renderAbas() {
-  listaAbas.innerHTML = '';
-  for (const id in notas) {
+function loadTabs() {
+  const tabs = getAllTabs();
+  tabsContainer.innerHTML = '';
+
+  for (const id of tabs) {
     const btn = document.createElement('button');
-    btn.textContent = notas[id].titulo || `Nota ${id}`;
-    btn.onclick = () => abrirNota(id);
-    btn.style.fontWeight = id === notaAtual ? 'bold' : 'normal';
-    listaAbas.appendChild(btn);
+    btn.textContent = `Aba ${id}`;
+    btn.className = id === currentTabId ? 'active' : '';
+    btn.onclick = () => switchTab(id);
+    tabsContainer.appendChild(btn);
   }
 }
 
-function novaNota() {
-  const id = 'nota_' + Date.now();
-  notas[id] = { titulo: `Nota ${Object.keys(notas).length + 1}`, conteudo: '' };
-  notaAtual = id;
-  localStorage.setItem('notas', JSON.stringify(notas));
-  localStorage.setItem('notaAtual', notaAtual);
-  renderAbas();
-  abrirNota(id);
+function getAllTabs() {
+  const raw = localStorage.getItem('abas');
+  return raw ? JSON.parse(raw) : [];
 }
 
-function abrirNota(id) {
-  notaAtual = id;
-  textarea.value = notas[id].conteudo || '';
-  localStorage.setItem('notaAtual', notaAtual);
-  renderAbas();
+function saveAllTabs(tabs) {
+  localStorage.setItem('abas', JSON.stringify(tabs));
 }
 
-function salvarNota() {
-  if (!notaAtual) return;
-  notas[notaAtual].conteudo = textarea.value;
-  localStorage.setItem('notas', JSON.stringify(notas));
-  alert('Nota salva!');
+function createNewTab() {
+  const tabs = getAllTabs();
+  const newId = Date.now().toString();
+  tabs.push(newId);
+  saveAllTabs(tabs);
+  localStorage.setItem(`nota-${newId}`, '');
+  switchTab(newId);
 }
 
-function excluirNota() {
-  if (!notaAtual || !confirm('Deseja excluir esta nota?')) return;
-  delete notas[notaAtual];
-  notaAtual = Object.keys(notas)[0] || null;
-  localStorage.setItem('notas', JSON.stringify(notas));
-  localStorage.setItem('notaAtual', notaAtual);
-  if (notaAtual) abrirNota(notaAtual);
-  else textarea.value = '';
-  renderAbas();
+function switchTab(id) {
+  currentTabId = id;
+  textarea.value = localStorage.getItem(`nota-${id}`) || '';
+  loadTabs();
 }
 
-// Baixar em TXT
+textarea.addEventListener('input', () => {
+  if (currentTabId) {
+    localStorage.setItem(`nota-${currentTabId}`, textarea.value);
+  }
+});
+
+newTabBtn.addEventListener('click', createNewTab);
+
 function downloadTxt() {
+  if (!currentTabId) return;
   const blob = new Blob([textarea.value], { type: 'text/plain' });
   const link = document.createElement('a');
-  link.download = (notas[notaAtual]?.titulo || 'anotacao') + '.txt';
+  link.download = `nota-${currentTabId}.txt`;
   link.href = URL.createObjectURL(blob);
   link.click();
 }
 
-// Baixar em PDF
 async function downloadPdf() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const lines = doc.splitTextToSize(textarea.value, 180);
   doc.text(lines, 10, 20);
-  doc.save((notas[notaAtual]?.titulo || 'anotacao') + '.pdf');
+  doc.save(`nota-${currentTabId}.pdf`);
 }
 
-// Início
+function clearNote() {
+  if (confirm('Tem certeza que deseja apagar esta aba?')) {
+    localStorage.removeItem(`nota-${currentTabId}`);
+    const tabs = getAllTabs().filter(t => t !== currentTabId);
+    saveAllTabs(tabs);
+    currentTabId = tabs[0] || null;
+    if (currentTabId) {
+      switchTab(currentTabId);
+    } else {
+      textarea.value = '';
+      loadTabs();
+    }
+  }
+}
+
+// Inicializa
 window.onload = () => {
-  renderAbas();
-  if (notaAtual && notas[notaAtual]) abrirNota(notaAtual);
+  const tabs = getAllTabs();
+  if (tabs.length === 0) {
+    createNewTab();
+  } else {
+    switchTab(tabs[0]);
+  }
 };
