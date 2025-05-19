@@ -1,0 +1,7 @@
+{
+  "notas": {
+    "id1": { "titulo": "Nota 1", "conteudo": "..." },
+    "id2": { "titulo": "Nota 2", "conteudo": "..." }
+  },
+  "notaAtual": "id2"
+}
