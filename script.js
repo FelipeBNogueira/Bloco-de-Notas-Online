@@ -1,8 +1,24 @@
-const textarea = document.getElementById('note');
+let currentTabId = null;
+
 const tabsContainer = document.getElementById('tabs');
 const newTabBtn = document.getElementById('newTabBtn');
 
-let currentTabId = null;
+const quill = new Quill('#editor', {
+  modules: {
+    toolbar: [
+      [{ font: [] }, { size: [] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ color: [] }, { background: [] }],
+      [{ script: 'super' }, { script: 'sub' }],
+      [{ header: '1' }, { header: '2' }, 'blockquote', 'code-block'],
+      [{ list: 'ordered' }, { list: 'bullet' }, { indent: '-1' }, { indent: '+1' }],
+      [{ align: [] }],
+      ['link', 'image'],
+      ['clean']
+    ]
+  },
+  theme: 'snow'
+});
 
 function getAllTabs() {
   return JSON.parse(localStorage.getItem('abas') || '[]');
@@ -12,11 +28,11 @@ function saveAllTabs(tabs) {
   localStorage.setItem('abas', JSON.stringify(tabs));
 }
 
-function updateTabLabel(id, content) {
-  const btn = document.querySelector(`.tab[data-id="${id}"] span`);
-  if (btn) {
-    btn.textContent = content.substring(0, 15) || 'Sem título';
-  }
+function updateTabLabel(id, html) {
+  const text = quill.getText().trim();
+  const label = text.substring(0, 15) || 'Sem título';
+  const tab = document.querySelector(`.tab[data-id="${id}"] span`);
+  if (tab) tab.textContent = label;
 }
 
 function loadTabs() {
@@ -25,15 +41,16 @@ function loadTabs() {
 
   tabs.forEach(id => {
     const content = localStorage.getItem(`nota-${id}`) || '';
+    const label = (new DOMParser().parseFromString(content, 'text/html')).body.textContent.substring(0, 15);
 
     const tab = document.createElement('div');
     tab.className = 'tab';
     if (id === currentTabId) tab.classList.add('active');
     tab.dataset.id = id;
 
-    const label = document.createElement('span');
-    label.textContent = content.substring(0, 15) || 'Sem título';
-    tab.appendChild(label);
+    const span = document.createElement('span');
+    span.textContent = label || 'Sem título';
+    tab.appendChild(span);
 
     const close = document.createElement('button');
     close.className = 'close';
@@ -60,7 +77,8 @@ function createNewTab() {
 
 function switchTab(id) {
   currentTabId = id;
-  textarea.value = localStorage.getItem(`nota-${id}`) || '';
+  const html = localStorage.getItem(`nota-${id}`) || '';
+  quill.root.innerHTML = html;
   loadTabs();
 }
 
@@ -72,29 +90,34 @@ function closeTab(id) {
   if (currentTabId === id) {
     currentTabId = tabs[0] || null;
     if (currentTabId) {
-      textarea.value = localStorage.getItem(`nota-${currentTabId}`) || '';
+      quill.root.innerHTML = localStorage.getItem(`nota-${currentTabId}`) || '';
     } else {
-      textarea.value = '';
+      quill.root.innerHTML = '';
     }
   }
 
   loadTabs();
 }
 
-textarea.addEventListener('input', () => {
+quill.on('text-change', () => {
   if (currentTabId) {
-    localStorage.setItem(`nota-${currentTabId}`, textarea.value);
-    updateTabLabel(currentTabId, textarea.value);
+    const html = quill.root.innerHTML;
+    localStorage.setItem(`nota-${currentTabId}`, html);
+    updateTabLabel(currentTabId, html);
   }
 });
 
 newTabBtn.addEventListener('click', createNewTab);
 
-function downloadTxt() {
+function downloadDoc() {
   if (!currentTabId) return;
-  const blob = new Blob([textarea.value], { type: 'text/plain' });
+
+  const blob = new Blob([quill.root.innerHTML], {
+    type: 'application/msword'
+  });
+
   const link = document.createElement('a');
-  link.download = `nota-${currentTabId}.txt`;
+  link.download = `nota-${currentTabId}.doc`;
   link.href = URL.createObjectURL(blob);
   link.click();
 }
@@ -102,15 +125,16 @@ function downloadTxt() {
 async function downloadPdf() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  const lines = doc.splitTextToSize(textarea.value, 180);
+  const text = quill.getText();
+  const lines = doc.splitTextToSize(text, 180);
   doc.text(lines, 10, 20);
   doc.save(`nota-${currentTabId}.pdf`);
 }
 
-function clearNote() {
+function clearEditor() {
   if (!currentTabId) return;
   if (confirm('Deseja apagar esta anotação?')) {
-    textarea.value = '';
+    quill.root.innerHTML = '';
     localStorage.setItem(`nota-${currentTabId}`, '');
     updateTabLabel(currentTabId, '');
   }
