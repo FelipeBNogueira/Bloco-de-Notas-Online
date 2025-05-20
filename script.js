@@ -8,23 +8,32 @@ let tabs = {};
 
 function updateLastUpdated() {
   const now = new Date().toLocaleString();
-  lastUpdated.textContent = now;
   if (currentTabId) {
     tabs[currentTabId].updated = now;
+    renderLastUpdated();
   }
 }
 
+function renderLastUpdated() {
+  lastUpdated.textContent = currentTabId && tabs[currentTabId]?.updated ? `Última atualização: ${tabs[currentTabId].updated}` : '-';
+}
+
 function initQuill() {
+  Quill.register('modules/imageResize', window.ImageResize);
+
   quill = new Quill('#editor', {
     theme: 'snow',
     modules: {
+      imageResize: {
+        displaySize: true,
+      },
       toolbar: [
         [{ 'font': [] }, { 'size': [] }],
         ['bold', 'italic', 'underline', 'strike'],
         [{ 'color': [] }, { 'background': [] }],
-        [{ 'script': 'sub'}, { 'script': 'super' }],
-        [{ 'header': '1'}, { 'header': '2'}, 'blockquote', 'code-block'],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'script': 'sub' }, { 'script': 'super' }],
+        [{ 'header': '1' }, { 'header': '2' }, 'blockquote', 'code-block'],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
         [{ 'align': [] }],
         ['link', 'image', 'video'],
         ['clean']
@@ -32,14 +41,9 @@ function initQuill() {
     }
   });
 
-  quill.on('text-change', updateLastUpdated);
-
-  // Tornar imagens redimensionáveis
-  quill.root.addEventListener('click', (e) => {
-    if (e.target.tagName === 'IMG') {
-      e.target.style.resize = 'both';
-      e.target.style.overflow = 'auto';
-    }
+  quill.on('text-change', () => {
+    updateLastUpdated();
+    saveCurrentTabContent();
   });
 }
 
@@ -48,7 +52,8 @@ function createTab(title = 'Nova Aba') {
   tabs[id] = {
     title,
     content: '',
-    updated: '-'
+    updated: '-',
+    editing: false
   };
 
   renderTabs();
@@ -116,12 +121,12 @@ function switchTab(id) {
   saveCurrentTabContent();
   currentTabId = id;
   renderTabs();
-  quill.setContents(quill.clipboard.convert(tabs[id].content));
-  lastUpdated.textContent = tabs[id].updated || '-';
+  quill.root.innerHTML = tabs[id].content || '';
+  renderLastUpdated();
 }
 
 function saveCurrentTabContent() {
-  if (currentTabId) {
+  if (currentTabId && quill) {
     tabs[currentTabId].content = quill.root.innerHTML;
   }
 }
