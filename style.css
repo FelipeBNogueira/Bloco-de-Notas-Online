@@ -6,7 +6,8 @@ body {
 }
 
 .container {
-  width: 80%;
+  width: 40%; /* reduzido 50% */
+  height: auto;
   margin: 30px auto;
   background: white;
   border-radius: 8px;
@@ -21,13 +22,17 @@ body {
 }
 
 .tab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   background-color: #ddd;
   border: 1px solid #aaa;
   border-radius: 5px 5px 0 0;
   padding: 5px 10px;
   margin-right: 5px;
-  cursor: pointer;
+  min-width: 120px;
   position: relative;
+  cursor: pointer;
 }
 
 .tab.active {
@@ -36,26 +41,30 @@ body {
   font-weight: bold;
 }
 
-.tab span.title {
-  user-select: none;
-}
-
 .tab input {
   font-size: 14px;
   border: none;
   background: transparent;
-  width: 100px;
+  width: 100%;
+}
+
+.tab span.title {
+  flex-grow: 1;
+  user-select: none;
 }
 
 .tab .close {
   margin-left: 8px;
-  cursor: pointer;
+  color: #666;
   font-weight: bold;
-  color: red;
+  cursor: pointer;
+  position: absolute;
+  right: 8px;
+  top: 4px;
 }
 
 #editor {
-  height: 300px;
+  height: 420px; /* 40% mais alto que 300px */
   background: #fff;
   border: 1px solid #ccc;
   border-top: none;
@@ -70,6 +79,14 @@ body {
 
 .ql-container.ql-snow {
   border-radius: 0 0 5px 5px;
+}
+
+.ql-editor img {
+  max-width: 100%;
+  height: auto;
+  resize: both;
+  overflow: auto;
+  display: inline-block;
 }
 
 #footer {
