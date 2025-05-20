@@ -147,4 +147,40 @@ function renderTabs() {
       e.stopPropagation();
       delete tabs[id];
       if (currentTabId === id) {
-        const tabIds
+        const tabIds = Object.keys(tabs);
+        currentTabId = tabIds.length > 0 ? tabIds[0] : null;
+        if (currentTabId) initQuill(tabs[currentTabId].content);
+        else quill.root.innerHTML = '';
+        updateLastUpdated(currentTabId ? tabs[currentTabId].lastUpdated : '-');
+      }
+      renderTabs();
+      saveTabs();
+    };
+    tab.appendChild(close);
+
+    tab.onclick = () => {
+      if (id !== currentTabId) switchTab(id);
+    };
+
+    tabsContainer.appendChild(tab);
+  });
+}
+
+document.getElementById('addTabBtn').addEventListener('click', () => {
+  createTab('Nova aba');
+});
+
+window.addEventListener('beforeunload', () => {
+  saveCurrentTabContent();
+});
+
+// Inicialização
+loadTabs();
+
+if (!currentTabId) {
+  createTab('Primeira aba');
+} else {
+  renderTabs();
+  initQuill(tabs[currentTabId].content);
+  updateLastUpdated(tabs[currentTabId].lastUpdated);
+}
