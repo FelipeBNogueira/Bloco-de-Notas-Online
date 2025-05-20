@@ -1,151 +1,150 @@
-let currentTabId = null;
-
 const tabsContainer = document.getElementById('tabs');
-const newTabBtn = document.getElementById('newTabBtn');
+const newTabBtn = document.getElementById('newTab');
+const lastUpdated = document.getElementById('lastUpdated');
+let currentTabId = null;
+let quill;
 
-const quill = new Quill('#editor', {
-  modules: {
-    toolbar: [
-      [{ font: [] }, { size: [] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ color: [] }, { background: [] }],
-      [{ script: 'super' }, { script: 'sub' }],
-      [{ header: '1' }, { header: '2' }, 'blockquote', 'code-block'],
-      [{ list: 'ordered' }, { list: 'bullet' }, { indent: '-1' }, { indent: '+1' }],
-      [{ align: [] }],
-      ['link', 'image'],
-      ['clean']
-    ]
-  },
-  theme: 'snow'
-});
+let tabs = {};
 
-function getAllTabs() {
-  return JSON.parse(localStorage.getItem('abas') || '[]');
+function updateLastUpdated() {
+  const now = new Date().toLocaleString();
+  lastUpdated.textContent = now;
+  if (currentTabId) {
+    tabs[currentTabId].updated = now;
+  }
 }
 
-function saveAllTabs(tabs) {
-  localStorage.setItem('abas', JSON.stringify(tabs));
+// Inicializar o editor
+function initQuill() {
+  quill = new Quill('#editor', {
+    theme: 'snow',
+    modules: {
+      toolbar: [
+        [{ 'font': [] }, { 'size': [] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],
+        [{ 'header': '1'}, { 'header': '2'}, 'blockquote', 'code-block'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'align': [] }],
+        ['link', 'image', 'video'],
+        ['clean']
+      ]
+    }
+  });
+
+  quill.on('text-change', updateLastUpdated);
 }
 
-function updateTabLabel(id, html) {
-  const text = quill.getText().trim();
-  const label = text.substring(0, 15) || 'Sem título';
-  const tab = document.querySelector(`.tab[data-id="${id}"] span`);
-  if (tab) tab.textContent = label;
+function createTab(title = 'Nova Aba') {
+  const id = Date.now().toString();
+  tabs[id] = {
+    title,
+    content: '',
+    updated: '-'
+  };
+
+  renderTabs();
+  switchTab(id);
 }
 
-function loadTabs() {
-  const tabs = getAllTabs();
+function renderTabs() {
   tabsContainer.innerHTML = '';
 
-  tabs.forEach(id => {
-    const content = localStorage.getItem(`nota-${id}`) || '';
-    const label = (new DOMParser().parseFromString(content, 'text/html')).body.textContent.substring(0, 15);
-
+  Object.entries(tabs).forEach(([id, tabData]) => {
     const tab = document.createElement('div');
-    tab.className = 'tab';
-    if (id === currentTabId) tab.classList.add('active');
-    tab.dataset.id = id;
-
+    tab.className = 'tab' + (id === currentTabId ? ' active' : '');
+    
     const span = document.createElement('span');
-    span.textContent = label || 'Sem título';
-    tab.appendChild(span);
+    span.className = 'title';
+    span.textContent = tabData.title.slice(0, 15);
+    span.ondblclick = () => editTabTitle(id, span);
 
-    const close = document.createElement('button');
+    const close = document.createElement('span');
     close.className = 'close';
-    close.textContent = '×';
+    close.textContent = 'x';
     close.onclick = (e) => {
       e.stopPropagation();
-      closeTab(id);
+      delete tabs[id];
+      if (currentTabId === id) currentTabId = null;
+      renderTabs();
+      if (Object.keys(tabs).length > 0) {
+        switchTab(Object.keys(tabs)[0]);
+      } else {
+        quill.setContents([]);
+        lastUpdated.textContent = '-';
+      }
     };
-    tab.appendChild(close);
 
     tab.onclick = () => switchTab(id);
+    tab.appendChild(span);
+    tab.appendChild(close);
     tabsContainer.appendChild(tab);
   });
 }
 
-function createNewTab() {
-  const tabs = getAllTabs();
-  const newId = Date.now().toString();
-  tabs.push(newId);
-  saveAllTabs(tabs);
-  localStorage.setItem(`nota-${newId}`, '');
-  switchTab(newId);
+function editTabTitle(id, span) {
+  const input = document.createElement('input');
+  input.value = tabs[id].title;
+  input.onblur = () => {
+    tabs[id].title = input.value || 'Sem título';
+    renderTabs();
+  };
+  input.onkeydown = (e) => {
+    if (e.key === 'Enter') input.blur();
+  };
+  span.replaceWith(input);
+  input.focus();
 }
 
 function switchTab(id) {
+  if (!tabs[id]) return;
   currentTabId = id;
-  const html = localStorage.getItem(`nota-${id}`) || '';
-  quill.root.innerHTML = html;
-  loadTabs();
+  renderTabs();
+  quill.setContents(quill.clipboard.convert(tabs[id].content));
+  lastUpdated.textContent = tabs[id].updated || '-';
 }
 
-function closeTab(id) {
-  localStorage.removeItem(`nota-${id}`);
-  const tabs = getAllTabs().filter(t => t !== id);
-  saveAllTabs(tabs);
-
-  if (currentTabId === id) {
-    currentTabId = tabs[0] || null;
-    if (currentTabId) {
-      quill.root.innerHTML = localStorage.getItem(`nota-${currentTabId}`) || '';
-    } else {
-      quill.root.innerHTML = '';
-    }
-  }
-
-  loadTabs();
-}
-
-quill.on('text-change', () => {
+function saveCurrentTabContent() {
   if (currentTabId) {
-    const html = quill.root.innerHTML;
-    localStorage.setItem(`nota-${currentTabId}`, html);
-    updateTabLabel(currentTabId, html);
+    tabs[currentTabId].content = quill.root.innerHTML;
   }
-});
+}
 
-newTabBtn.addEventListener('click', createNewTab);
-
-function downloadDoc() {
-  if (!currentTabId) return;
-
-  const blob = new Blob([quill.root.innerHTML], {
-    type: 'application/msword'
-  });
-
+function downloadTxt() {
+  saveCurrentTabContent();
+  const content = tabs[currentTabId]?.content || '';
+  const blob = new Blob([content], { type: 'text/plain' });
   const link = document.createElement('a');
-  link.download = `nota-${currentTabId}.doc`;
+  link.download = `${tabs[currentTabId].title}.txt`;
   link.href = URL.createObjectURL(blob);
   link.click();
 }
 
 async function downloadPdf() {
+  saveCurrentTabContent();
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const text = quill.getText();
   const lines = doc.splitTextToSize(text, 180);
   doc.text(lines, 10, 20);
-  doc.save(`nota-${currentTabId}.pdf`);
+  doc.save(`${tabs[currentTabId].title}.pdf`);
 }
 
-function clearEditor() {
-  if (!currentTabId) return;
-  if (confirm('Deseja apagar esta anotação?')) {
-    quill.root.innerHTML = '';
-    localStorage.setItem(`nota-${currentTabId}`, '');
-    updateTabLabel(currentTabId, '');
+function clearNote() {
+  if (confirm('Tem certeza que deseja apagar suas anotações?')) {
+    quill.setContents([]);
+    updateLastUpdated();
   }
 }
 
-// Inicializa
+newTabBtn.onclick = () => {
+  saveCurrentTabContent();
+  createTab();
+};
+
+// Inicializar
 window.onload = () => {
-  const tabs = getAllTabs();
-  if (tabs.length === 0) {
-    createNewTab();
-  } else {
-    switchTab(tabs[0]);
-  }
+  initQuill();
+  createTab('Primeira Aba');
 };
