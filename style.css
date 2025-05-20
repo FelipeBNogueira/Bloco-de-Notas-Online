@@ -1,108 +1,67 @@
 body {
-  font-family: "Segoe UI", sans-serif;
-  background: #e6e6e6;
-  padding: 20px;
+  font-family: Arial, sans-serif;
+  background-color: #f3f3f3;
   margin: 0;
+  padding: 0;
 }
 
 .container {
-  max-width: 800px;
-  margin: auto;
-  background: #fff;
-  padding: 20px;
+  width: 80%;
+  margin: 30px auto;
+  background: white;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-h1 {
-  text-align: center;
-  margin-top: 0;
-}
-
-.tabs {
+#tabs {
   display: flex;
   flex-wrap: wrap;
   margin-bottom: 10px;
-  border-bottom: 1px solid #ccc;
 }
 
 .tab {
-  display: flex;
-  align-items: center;
-  background: #f1f1f1;
-  border: 1px solid #ccc;
-  border-bottom: none;
+  background-color: #ddd;
+  border: 1px solid #aaa;
+  border-radius: 5px 5px 0 0;
   padding: 5px 10px;
   margin-right: 5px;
-  border-radius: 6px 6px 0 0;
   cursor: pointer;
   position: relative;
-  max-width: 200px;
-  overflow: hidden;
 }
 
 .tab.active {
-  background: #ffffff;
-  border-bottom: 1px solid #ffffff;
+  background-color: #fff;
+  border-bottom: none;
   font-weight: bold;
 }
 
-.tab span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
+.tab span.title {
+  user-select: none;
+}
+
+.tab input {
+  font-size: 14px;
+  border: none;
+  background: transparent;
+  width: 100px;
 }
 
 .tab .close {
-  background: none;
-  border: none;
-  font-size: 16px;
   margin-left: 8px;
   cursor: pointer;
-  color: #888;
-}
-
-textarea {
-  width: 100%;
-  height: 300px;
-  padding: 10px;
-  font-size: 15px;
-  font-family: Consolas, monospace;
-  resize: none;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.buttons {
-  margin-top: 10px;
-  text-align: center;
-}
-
-.buttons button, .new-tab {
-  margin: 5px;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 6px;
-  background: #0078d7;
-  color: white;
-  cursor: pointer;
-}
-
-.new-tab {
-  background: #e0e0e0;
-  color: black;
+  font-weight: bold;
+  color: red;
 }
 
 #editor {
   height: 300px;
   background: #fff;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-top: none;
+  border-radius: 0 0 5px 5px;
   padding: 10px;
-  margin-top: 10px;
   overflow-y: auto;
-  font-size: 16px;
 }
 
 .ql-toolbar.ql-snow {
@@ -113,3 +72,28 @@ textarea {
   border-radius: 0 0 5px 5px;
 }
 
+#footer {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #555;
+  text-align: right;
+}
+
+.buttons {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  padding: 8px 12px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
