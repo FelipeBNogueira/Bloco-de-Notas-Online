@@ -1,116 +1,141 @@
 body {
   font-family: Arial, sans-serif;
-  background-color: #f3f3f3;
-  margin: 0;
-  padding: 0;
+  background: #f9f9f9;
+  margin: 0; padding: 20px;
+  display: flex;
+  justify-content: center;
 }
 
 .container {
-  width: 40%; /* reduzido 50% */
-  height: auto;
-  margin: 30px auto;
+  width: 800px;
   background: white;
   border-radius: 8px;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
   padding: 20px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#tabsContainer {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  user-select: none;
 }
 
 #tabs {
   display: flex;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
+  flex-wrap: nowrap;
+  gap: 5px;
+  flex-grow: 1;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
+}
+
+#tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
+#tabs::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 3px;
 }
 
 .tab {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background-color: #ddd;
-  border: 1px solid #aaa;
-  border-radius: 5px 5px 0 0;
-  padding: 5px 10px;
-  margin-right: 5px;
-  min-width: 120px;
-  position: relative;
+  background-color: #f1f1f1;
+  border-radius: 8px;
+  padding: 5px 12px;
   cursor: pointer;
+  position: relative;
+  max-width: 180px;
+  white-space: nowrap;
+  user-select: text;
 }
 
 .tab.active {
-  background-color: #fff;
-  border-bottom: none;
+  background-color: #dbe5ff;
   font-weight: bold;
+}
+
+.tab .title {
+  flex: 1;
+  margin-right: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tab input {
-  font-size: 14px;
   border: none;
   background: transparent;
+  outline: none;
   width: 100%;
-}
-
-.tab span.title {
-  flex-grow: 1;
-  user-select: none;
+  font-size: 14px;
+  font-family: inherit;
 }
 
 .tab .close {
+  color: #555;
+  font-size: 14px;
   margin-left: 8px;
-  color: #666;
-  font-weight: bold;
   cursor: pointer;
-  position: absolute;
-  right: 8px;
-  top: 4px;
+  font-weight: bold;
+  user-select: none;
 }
 
+#addTabBtn {
+  font-size: 24px;
+  background-color: #f1f1f1;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  cursor: pointer;
+  margin-left: 10px;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+#addTabBtn:hover {
+  background-color: #d0d0d0;
+}
+
+/* Editor customizado */
 #editor {
-  height: 420px; /* 40% mais alto que 300px */
+  height: 420px; /* 40% maior que 300px */
   background: #fff;
   border: 1px solid #ccc;
-  border-top: none;
-  border-radius: 0 0 5px 5px;
+  border-radius: 5px;
   padding: 10px;
   overflow-y: auto;
+  font-size: 16px;
+  margin-top: 10px;
 }
 
+/* Quill toolbar arredondada */
 .ql-toolbar.ql-snow {
   border-radius: 5px 5px 0 0;
 }
 
+/* Quill container arredondado */
 .ql-container.ql-snow {
   border-radius: 0 0 5px 5px;
 }
 
+/* Permitir redimensionar imagens dentro do editor */
 .ql-editor img {
-  max-width: 100%;
+  max-width: 50%; /* metade da largura padrão */
   height: auto;
+  cursor: pointer;
   resize: both;
   overflow: auto;
   display: inline-block;
-}
-
-#footer {
-  margin-top: 10px;
-  font-size: 14px;
-  color: #555;
-  text-align: right;
-}
-
-.buttons {
-  margin-top: 15px;
-  display: flex;
-  gap: 10px;
-}
-
-button {
-  padding: 8px 12px;
-  border: none;
-  background-color: #007bff;
-  color: white;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #0056b3;
+  vertical-align: middle;
 }
