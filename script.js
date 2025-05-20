@@ -1,68 +1,114 @@
-const tabsContainer = document.getElementById('tabs');
-const newTabBtn = document.getElementById('newTab');
-const lastUpdated = document.getElementById('lastUpdated');
-let currentTabId = null;
 let quill;
-
 let tabs = {};
+let currentTabId = null;
+const lastUpdated = document.getElementById('lastUpdated');
+const tabsContainer = document.getElementById('tabs');
 
-function updateLastUpdated() {
-  const now = new Date().toLocaleString();
-  if (currentTabId) {
-    tabs[currentTabId].updated = now;
-    renderLastUpdated();
+function initQuill(content = '') {
+  if (quill) {
+    quill.off('text-change');
+    quill.root.innerHTML = content;
+  } else {
+    quill = new Quill('#editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          [{ font: [] }, { size: ['small', false, 'large', 'huge'] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ color: [] }, { background: [] }],
+          [{ script: 'super' }, { script: 'sub' }],
+          [{ header: 1 }, { header: 2 }, 'blockquote', 'code-block'],
+          [{ list: 'ordered' }, { list: 'bullet' }, { indent: '-1' }, { indent: '+1' }],
+          ['direction', { align: [] }],
+          ['link', 'image', 'video', 'formula'],
+          ['clean']
+        ]
+      }
+    });
+
+    quill.root.style.minHeight = '350px';
+
+    // Permitir redimensionar imagens clicando nelas
+    quill.root.addEventListener('click', e => {
+      if (e.target && e.target.tagName === 'IMG') {
+        e.target.style.maxWidth = '100%'; // Pode ajustar manualmente
+      }
+    });
+  }
+
+  quill.setContents(quill.clipboard.convert(content));
+
+  quill.on('text-change', () => {
+    if (!currentTabId) return;
+
+    tabs[currentTabId].content = quill.root.innerHTML;
+    tabs[currentTabId].lastUpdated = new Date().toLocaleString();
+
+    updateLastUpdated(tabs[currentTabId].lastUpdated);
+    saveTabs();
+  });
+}
+
+function updateLastUpdated(text) {
+  lastUpdated.textContent = text || '-';
+}
+
+function saveTabs() {
+  localStorage.setItem('blocoDeNotasTabs', JSON.stringify(tabs));
+  localStorage.setItem('blocoDeNotasCurrentTab', currentTabId);
+}
+
+function loadTabs() {
+  const savedTabs = localStorage.getItem('blocoDeNotasTabs');
+  const savedCurrentTab = localStorage.getItem('blocoDeNotasCurrentTab');
+  if (savedTabs) {
+    tabs = JSON.parse(savedTabs);
+    if (savedCurrentTab && tabs[savedCurrentTab]) {
+      currentTabId = savedCurrentTab;
+    } else {
+      currentTabId = Object.keys(tabs)[0];
+    }
+  } else {
+    tabs = {};
+    currentTabId = null;
   }
 }
 
-function renderLastUpdated() {
-  lastUpdated.textContent = currentTabId && tabs[currentTabId]?.updated ? `Última atualização: ${tabs[currentTabId].updated}` : '-';
-}
-
-function initQuill() {
-  Quill.register('modules/imageResize', window.ImageResize);
-
-  quill = new Quill('#editor', {
-    theme: 'snow',
-    modules: {
-      imageResize: {
-        displaySize: true,
-      },
-      toolbar: [
-        [{ 'font': [] }, { 'size': [] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'script': 'sub' }, { 'script': 'super' }],
-        [{ 'header': '1' }, { 'header': '2' }, 'blockquote', 'code-block'],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-        [{ 'align': [] }],
-        ['link', 'image', 'video'],
-        ['clean']
-      ]
-    }
-  });
-
-  quill.on('text-change', () => {
-    updateLastUpdated();
-    saveCurrentTabContent();
-  });
-}
-
-function createTab(title = 'Nova Aba') {
-  const id = Date.now().toString();
+function createTab(title = 'Sem título') {
+  const id = 'tab-' + Date.now();
   tabs[id] = {
     title,
     content: '',
-    updated: '-',
+    lastUpdated: new Date().toLocaleString(),
     editing: false
   };
-
+  currentTabId = id;
   renderTabs();
-  switchTab(id);
+  initQuill('');
+  updateLastUpdated(tabs[id].lastUpdated);
+  saveTabs();
+}
+
+function switchTab(id) {
+  if (!tabs[id]) return;
+  saveCurrentTabContent();
+  currentTabId = id;
+  renderTabs();
+  initQuill(tabs[id].content || '');
+  updateLastUpdated(tabs[id].lastUpdated);
+  saveTabs();
+}
+
+function saveCurrentTabContent() {
+  if (!currentTabId || !quill) return;
+  tabs[currentTabId].content = quill.root.innerHTML;
+  tabs[currentTabId].lastUpdated = new Date().toLocaleString();
+  updateLastUpdated(tabs[currentTabId].lastUpdated);
+  saveTabs();
 }
 
 function renderTabs() {
   tabsContainer.innerHTML = '';
-
   Object.entries(tabs).forEach(([id, tabData]) => {
     const tab = document.createElement('div');
     tab.className = 'tab' + (id === currentTabId ? ' active' : '');
@@ -71,8 +117,9 @@ function renderTabs() {
       const input = document.createElement('input');
       input.value = tabData.title;
       input.onblur = () => {
-        tabs[id].title = input.value || 'Sem título';
+        tabs[id].title = input.value.trim() || 'Sem título';
         tabs[id].editing = false;
+        saveTabs();
         renderTabs();
       };
       input.onkeydown = (e) => {
@@ -83,8 +130,9 @@ function renderTabs() {
     } else {
       const span = document.createElement('span');
       span.className = 'title';
-      span.textContent = tabData.title.slice(0, 15);
-      span.ondblclick = () => {
+      span.textContent = tabData.title.length > 15 ? tabData.title.slice(0, 15) + '…' : tabData.title;
+      span.ondblclick = (e) => {
+        e.stopPropagation();
         tabs[id].editing = true;
         renderTabs();
       };
@@ -93,77 +141,10 @@ function renderTabs() {
 
     const close = document.createElement('span');
     close.className = 'close';
-    close.textContent = 'x';
+    close.textContent = '×'; // caractere "x" mais bonito
+    close.title = 'Fechar aba';
     close.onclick = (e) => {
       e.stopPropagation();
       delete tabs[id];
-      if (currentTabId === id) currentTabId = null;
-      renderTabs();
-      if (Object.keys(tabs).length > 0) {
-        switchTab(Object.keys(tabs)[0]);
-      } else {
-        quill.setContents([]);
-        lastUpdated.textContent = '-';
-      }
-    };
-
-    tab.onclick = () => {
-      if (!tabs[id].editing) switchTab(id);
-    };
-
-    tab.appendChild(close);
-    tabsContainer.appendChild(tab);
-  });
-}
-
-function switchTab(id) {
-  if (!tabs[id]) return;
-  saveCurrentTabContent();
-  currentTabId = id;
-  renderTabs();
-  quill.root.innerHTML = tabs[id].content || '';
-  renderLastUpdated();
-}
-
-function saveCurrentTabContent() {
-  if (currentTabId && quill) {
-    tabs[currentTabId].content = quill.root.innerHTML;
-  }
-}
-
-function downloadTxt() {
-  saveCurrentTabContent();
-  const content = tabs[currentTabId]?.content || '';
-  const blob = new Blob([content], { type: 'text/plain' });
-  const link = document.createElement('a');
-  link.download = `${tabs[currentTabId].title}.txt`;
-  link.href = URL.createObjectURL(blob);
-  link.click();
-}
-
-async function downloadPdf() {
-  saveCurrentTabContent();
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const text = quill.getText();
-  const lines = doc.splitTextToSize(text, 180);
-  doc.text(lines, 10, 20);
-  doc.save(`${tabs[currentTabId].title}.pdf`);
-}
-
-function clearNote() {
-  if (confirm('Tem certeza que deseja apagar suas anotações?')) {
-    quill.setContents([]);
-    updateLastUpdated();
-  }
-}
-
-newTabBtn.onclick = () => {
-  saveCurrentTabContent();
-  createTab();
-};
-
-window.onload = () => {
-  initQuill();
-  createTab('Primeira Aba');
-};
+      if (currentTabId === id) {
+        const tabIds
