@@ -14,7 +14,6 @@ function updateLastUpdated() {
   }
 }
 
-// Inicializar o editor
 function initQuill() {
   quill = new Quill('#editor', {
     theme: 'snow',
@@ -34,6 +33,14 @@ function initQuill() {
   });
 
   quill.on('text-change', updateLastUpdated);
+
+  // Tornar imagens redimensionáveis
+  quill.root.addEventListener('click', (e) => {
+    if (e.target.tagName === 'IMG') {
+      e.target.style.resize = 'both';
+      e.target.style.overflow = 'auto';
+    }
+  });
 }
 
 function createTab(title = 'Nova Aba') {
@@ -54,11 +61,30 @@ function renderTabs() {
   Object.entries(tabs).forEach(([id, tabData]) => {
     const tab = document.createElement('div');
     tab.className = 'tab' + (id === currentTabId ? ' active' : '');
-    
-    const span = document.createElement('span');
-    span.className = 'title';
-    span.textContent = tabData.title.slice(0, 15);
-    span.ondblclick = () => editTabTitle(id, span);
+
+    if (tabData.editing) {
+      const input = document.createElement('input');
+      input.value = tabData.title;
+      input.onblur = () => {
+        tabs[id].title = input.value || 'Sem título';
+        tabs[id].editing = false;
+        renderTabs();
+      };
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') input.blur();
+      };
+      tab.appendChild(input);
+      input.focus();
+    } else {
+      const span = document.createElement('span');
+      span.className = 'title';
+      span.textContent = tabData.title.slice(0, 15);
+      span.ondblclick = () => {
+        tabs[id].editing = true;
+        renderTabs();
+      };
+      tab.appendChild(span);
+    }
 
     const close = document.createElement('span');
     close.className = 'close';
@@ -76,29 +102,18 @@ function renderTabs() {
       }
     };
 
-    tab.onclick = () => switchTab(id);
-    tab.appendChild(span);
+    tab.onclick = () => {
+      if (!tabs[id].editing) switchTab(id);
+    };
+
     tab.appendChild(close);
     tabsContainer.appendChild(tab);
   });
 }
 
-function editTabTitle(id, span) {
-  const input = document.createElement('input');
-  input.value = tabs[id].title;
-  input.onblur = () => {
-    tabs[id].title = input.value || 'Sem título';
-    renderTabs();
-  };
-  input.onkeydown = (e) => {
-    if (e.key === 'Enter') input.blur();
-  };
-  span.replaceWith(input);
-  input.focus();
-}
-
 function switchTab(id) {
   if (!tabs[id]) return;
+  saveCurrentTabContent();
   currentTabId = id;
   renderTabs();
   quill.setContents(quill.clipboard.convert(tabs[id].content));
@@ -143,7 +158,6 @@ newTabBtn.onclick = () => {
   createTab();
 };
 
-// Inicializar
 window.onload = () => {
   initQuill();
   createTab('Primeira Aba');
