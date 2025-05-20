@@ -4,26 +4,49 @@ const newTabBtn = document.getElementById('newTabBtn');
 
 let currentTabId = null;
 
-function loadTabs() {
-  const tabs = getAllTabs();
-  tabsContainer.innerHTML = '';
-
-  for (const id of tabs) {
-    const btn = document.createElement('button');
-    btn.textContent = `Aba ${id}`;
-    btn.className = id === currentTabId ? 'active' : '';
-    btn.onclick = () => switchTab(id);
-    tabsContainer.appendChild(btn);
-  }
-}
-
 function getAllTabs() {
-  const raw = localStorage.getItem('abas');
-  return raw ? JSON.parse(raw) : [];
+  return JSON.parse(localStorage.getItem('abas') || '[]');
 }
 
 function saveAllTabs(tabs) {
   localStorage.setItem('abas', JSON.stringify(tabs));
+}
+
+function updateTabLabel(id, content) {
+  const btn = document.querySelector(`.tab[data-id="${id}"] span`);
+  if (btn) {
+    btn.textContent = content.substring(0, 15) || 'Sem título';
+  }
+}
+
+function loadTabs() {
+  const tabs = getAllTabs();
+  tabsContainer.innerHTML = '';
+
+  tabs.forEach(id => {
+    const content = localStorage.getItem(`nota-${id}`) || '';
+
+    const tab = document.createElement('div');
+    tab.className = 'tab';
+    if (id === currentTabId) tab.classList.add('active');
+    tab.dataset.id = id;
+
+    const label = document.createElement('span');
+    label.textContent = content.substring(0, 15) || 'Sem título';
+    tab.appendChild(label);
+
+    const close = document.createElement('button');
+    close.className = 'close';
+    close.textContent = '×';
+    close.onclick = (e) => {
+      e.stopPropagation();
+      closeTab(id);
+    };
+    tab.appendChild(close);
+
+    tab.onclick = () => switchTab(id);
+    tabsContainer.appendChild(tab);
+  });
 }
 
 function createNewTab() {
@@ -41,9 +64,27 @@ function switchTab(id) {
   loadTabs();
 }
 
+function closeTab(id) {
+  localStorage.removeItem(`nota-${id}`);
+  const tabs = getAllTabs().filter(t => t !== id);
+  saveAllTabs(tabs);
+
+  if (currentTabId === id) {
+    currentTabId = tabs[0] || null;
+    if (currentTabId) {
+      textarea.value = localStorage.getItem(`nota-${currentTabId}`) || '';
+    } else {
+      textarea.value = '';
+    }
+  }
+
+  loadTabs();
+}
+
 textarea.addEventListener('input', () => {
   if (currentTabId) {
     localStorage.setItem(`nota-${currentTabId}`, textarea.value);
+    updateTabLabel(currentTabId, textarea.value);
   }
 });
 
@@ -67,17 +108,11 @@ async function downloadPdf() {
 }
 
 function clearNote() {
-  if (confirm('Tem certeza que deseja apagar esta aba?')) {
-    localStorage.removeItem(`nota-${currentTabId}`);
-    const tabs = getAllTabs().filter(t => t !== currentTabId);
-    saveAllTabs(tabs);
-    currentTabId = tabs[0] || null;
-    if (currentTabId) {
-      switchTab(currentTabId);
-    } else {
-      textarea.value = '';
-      loadTabs();
-    }
+  if (!currentTabId) return;
+  if (confirm('Deseja apagar esta anotação?')) {
+    textarea.value = '';
+    localStorage.setItem(`nota-${currentTabId}`, '');
+    updateTabLabel(currentTabId, '');
   }
 }
 
