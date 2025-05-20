@@ -1,48 +1,77 @@
 body {
-  font-family: sans-serif;
-  background: #f0f0f0;
+  font-family: "Segoe UI", sans-serif;
+  background: #e6e6e6;
   padding: 20px;
   margin: 0;
 }
 
 .container {
-  max-width: 600px;
+  max-width: 800px;
   margin: auto;
-  background: white;
+  background: #fff;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
   text-align: center;
+  margin-top: 0;
 }
 
 .tabs {
   display: flex;
   flex-wrap: wrap;
   margin-bottom: 10px;
+  border-bottom: 1px solid #ccc;
 }
 
-.tabs button {
-  margin: 2px;
-  padding: 6px 10px;
-  border: none;
-  border-radius: 6px;
-  background: #eee;
+.tab {
+  display: flex;
+  align-items: center;
+  background: #f1f1f1;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  padding: 5px 10px;
+  margin-right: 5px;
+  border-radius: 6px 6px 0 0;
   cursor: pointer;
+  position: relative;
+  max-width: 200px;
+  overflow: hidden;
 }
 
-.tabs button.active {
-  background: #007bff;
-  color: white;
+.tab.active {
+  background: #ffffff;
+  border-bottom: 1px solid #ffffff;
+  font-weight: bold;
+}
+
+.tab span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.tab .close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  margin-left: 8px;
+  cursor: pointer;
+  color: #888;
 }
 
 textarea {
   width: 100%;
   height: 300px;
   padding: 10px;
-  font-size: 16px;
+  font-size: 15px;
+  font-family: Consolas, monospace;
   resize: none;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
 
 .buttons {
@@ -50,12 +79,17 @@ textarea {
   text-align: center;
 }
 
-.buttons button {
+.buttons button, .new-tab {
   margin: 5px;
   padding: 10px 15px;
   border: none;
   border-radius: 6px;
-  background: #007bff;
+  background: #0078d7;
   color: white;
   cursor: pointer;
+}
+
+.new-tab {
+  background: #e0e0e0;
+  color: black;
 }
